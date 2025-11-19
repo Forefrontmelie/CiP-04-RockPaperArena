@@ -23,7 +23,7 @@ public class ParticipantRepository : IParticipantRepository
         new HumanParticipant("Charlie", 3),
         new HumanParticipant("Diana", 4),
         new HumanParticipant("Ethan", 5),
-        new HumanParticipant("Fiona", 6)/*, 
+        new HumanParticipant("Fiona", 6), 
         new HumanParticipant("George", 7),
         new HumanParticipant("Hannah", 8),
         new HumanParticipant("Isaac", 9),
@@ -37,7 +37,8 @@ public class ParticipantRepository : IParticipantRepository
         new HumanParticipant("Quentin", 17),
         new HumanParticipant("Rachel", 18),
         new HumanParticipant("Samuel", 19),
-        new HumanParticipant("Tina", 20) */
+        new HumanParticipant("Tina", 20),
+        new HumanParticipant("Unn", 21)
     };
 
         // NextId should be one greater than the highest id present

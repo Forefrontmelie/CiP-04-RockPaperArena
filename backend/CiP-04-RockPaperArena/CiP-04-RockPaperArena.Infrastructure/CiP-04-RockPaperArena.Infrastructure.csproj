@@ -11,4 +11,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\CiP-04-RockPaperArena.Domain\CiP-04-RockPaperArena.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

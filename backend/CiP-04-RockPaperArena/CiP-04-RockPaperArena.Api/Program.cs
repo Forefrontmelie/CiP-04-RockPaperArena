@@ -1,3 +1,7 @@
+using CiP_04_RockPaperArena.Application.Services;
+using CiP_04_RockPaperArena.Domain.Interfaces;
+using CiP_04_RockPaperArena.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -22,6 +26,9 @@ builder.Services.AddCors(options =>
             .AllowCredentials());
 });
 
+builder.Services.AddScoped<ITournamentService, TournamentService>();
+builder.Services.AddSingleton<IParticipantRepository, ParticipantRepository>();
+builder.Services.AddSingleton<IPairingStrategy, RoundRobinPairingStrategy>();
 
 var app = builder.Build();
 

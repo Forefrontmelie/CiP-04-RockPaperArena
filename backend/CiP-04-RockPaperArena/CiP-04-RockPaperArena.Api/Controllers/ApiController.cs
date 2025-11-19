@@ -1,20 +1,91 @@
-using Microsoft.AspNetCore.Mvc;
 using CiP_04_RockPaperArena.Domain.Dtos;
-using CiP_04_RockPaperArena.Domain.Models;
 using CiP_04_RockPaperArena.Domain.Interfaces;
+using CiP_04_RockPaperArena.Domain.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CiP_04_RockPaperArena.Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class ApiController(IGameService gameService, IParticipantRepository participant) : ControllerBase
+public class ApiController(ITournamentService tournament, IParticipantRepository participant) : ControllerBase
 {
 
-    [HttpGet("doesitwork")]
-    public string workGodDammit()
+    
+    // POST	/tournament/start Startar ny turnering.Skapar par fï¿½r runda 1 baserat pï¿½ din round-robin-funktion.Body: { "name": "Alice", "players": 8 }.
+    [HttpPost("tournament/start")]
+    public IActionResult StartTournament([FromBody] StartTournamentDto dto)
     {
-        return "Yay!";
+        try
+        {
+            tournament.StartTournament(dto.name, dto.players);
+            return Ok(new { message = "Tournament started successfully", playerName = dto.name, totalPlayers = dto.players });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
+    
+    
+        /*
+    // POST	/tournament/play Du gï¿½r ditt drag(rock, paper, scissors). Backend avgï¿½r resultatet fï¿½r delrundan, uppdaterar poï¿½ng och sparar resultatet fï¿½r denna delrunda i matchen.Returnerar status fï¿½r matchens delrundor och aktuell stï¿½llning.
+    [HttpPost("tournament/play")]
+    public MatchStatusDTO PlayRound([FromBody] PlayerMoveDTO dto)
+    {
+        return tournament.PlayRound(dto.Move);
+    }
+
+
+    // POST    /tournament/advance
+    // Simulerar alla ï¿½vriga/automatiska matcher i den pï¿½gï¿½ende rundan som bï¿½st av 3 (tills nï¿½gon har 2 delrundevinster),
+    // uppdaterar scoreboard och sï¿½tter upp nï¿½sta runda via round-robin-logiken fï¿½rst nï¿½r samtliga matcher i rundan ï¿½r fï¿½rdigspelade.
+    [HttpPost("tournament/advance")]
+    public void AdvanceTournament()
+    {
+        tournament.AdvanceTournament();
+    }
+    */
+
+
+    
+    
+    // GET	    /tournament/status	
+    // Returnerar aktuell runda, din nï¿½sta motstï¿½ndare och scoreboard, samt information om delrundor i matchen, t.ex. "round": 1 of 3, "playerWins": 1, "opponentWins": 0.
+    // ï¿½ven status fï¿½r om ï¿½vriga matcher i rundan ï¿½r fï¿½rdigspelade (bï¿½st av 3) kan ingï¿½.
+    [HttpGet("tournament/status")]
+    public IActionResult GetTournamentStatus()
+    {
+        try
+        {
+            // TODO: Implement actual tournament status logic
+            return Ok(new { message = "Tournament status retrieved", status = "active" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+
+    // GET	    /tournament/final	Returnerar slutresultatet och vinnare nï¿½r alla rundor ï¿½r spelade.
+    [HttpGet("tournament/final")]
+    public IActionResult GetFinalResult()
+    {
+        try
+        {
+            // TODO: Implement actual final result logic
+            return Ok(new { message = "Final result retrieved", winner = "TBD", results = new object[] { } });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+
+
+
+
 
 
 
@@ -22,25 +93,59 @@ public class ApiController(IGameService gameService, IParticipantRepository part
 
     //GET		/participants/				Returnerar alla participants.
     [HttpGet("participants")]
-    public IList<Participant> GetAllParticipants()
+    public IActionResult GetAllParticipants()
     {
-        return participant.GetAllParticipants();
+        try
+        {
+            var participants = participant.GetAllParticipants();
+            return Ok(participants);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
 
 
-    //POST	/player	(Bonus) 		Lägg till en ny deltagare i listan.
+    //POST	/player	(Bonus) 		Lï¿½gg till en ny deltagare i listan.
     [HttpPost("player")]
-    public void AddPlayer([FromBody] string name)
+    public IActionResult AddPlayer([FromBody] string name)
     {
-        participant.AddParticipant(name);
+        try
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return BadRequest(new { error = "Player name cannot be empty" });
+            }
+            
+            participant.AddParticipant(name);
+            return Ok(new { message = "Player added successfully", playerName = name });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
-    //DELETE	/player/:id	(Bonus) 	Ta bort en deltagare ur listan baserat på ID.
+    //DELETE	/player/:id	(Bonus) 	Ta bort en deltagare ur listan baserat pï¿½ ID.
     [HttpDelete("player/{id}")]
-    public void RemovePlayer(int id)
+    public IActionResult RemovePlayer(int id)
     {
-        participant.RemoveParticipant(id);
+        try
+        {
+            if (id <= 0)
+            {
+                return BadRequest(new { error = "Invalid player ID" });
+            }
+            
+            participant.RemoveParticipant(id);
+            return Ok(new { message = "Player removed successfully", playerId = id });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
 }
