@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>CiP_04_RockPaperArena.Api</RootNamespace>
+    <UserSecretsId>ddd64367-b898-44cb-b7fa-670dbed88759</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CiP-04-RockPaperArena.Application\CiP-04-RockPaperArena.Application.csproj" />
+    <ProjectReference Include="..\CiP-04-RockPaperArena.Domain\CiP-04-RockPaperArena.Domain.csproj" />
+    <ProjectReference Include="..\CiP-04-RockPaperArena.Infrastructure\CiP-04-RockPaperArena.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
