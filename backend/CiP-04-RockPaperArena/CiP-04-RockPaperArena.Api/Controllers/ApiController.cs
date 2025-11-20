@@ -18,37 +18,23 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
         try
         {
             tournament.StartTournament(dto.name, dto.players);
-            return Ok(new { message = "Tournament started successfully", playerName = dto.name, totalPlayers = dto.players });
+            var currentRound = tournament.GetCurrentRound();
+            
+            return Ok(new { 
+                message = "Tournament started successfully", 
+                playerName = dto.name, 
+                totalPlayers = dto.players,
+                currentRound = currentRound?.Round,
+                totalRounds = tournament.GetMaxNumberOfRounds(dto.players),
+                pairs = currentRound?.Pairs
+            });
         }
         catch (Exception ex)
         {
             return BadRequest(new { error = ex.Message });
         }
     }
-    
-    
-        /*
-    // POST	/tournament/play Du g�r ditt drag(rock, paper, scissors). Backend avg�r resultatet f�r delrundan, uppdaterar po�ng och sparar resultatet f�r denna delrunda i matchen.Returnerar status f�r matchens delrundor och aktuell st�llning.
-    [HttpPost("tournament/play")]
-    public MatchStatusDTO PlayRound([FromBody] PlayerMoveDTO dto)
-    {
-        return tournament.PlayRound(dto.Move);
-    }
 
-
-    // POST    /tournament/advance
-    // Simulerar alla �vriga/automatiska matcher i den p�g�ende rundan som b�st av 3 (tills n�gon har 2 delrundevinster),
-    // uppdaterar scoreboard och s�tter upp n�sta runda via round-robin-logiken f�rst n�r samtliga matcher i rundan �r f�rdigspelade.
-    [HttpPost("tournament/advance")]
-    public void AdvanceTournament()
-    {
-        tournament.AdvanceTournament();
-    }
-    */
-
-
-    
-    
     // GET	    /tournament/status	
     // Returnerar aktuell runda, din n�sta motst�ndare och scoreboard, samt information om delrundor i matchen, t.ex. "round": 1 of 3, "playerWins": 1, "opponentWins": 0.
     // �ven status f�r om �vriga matcher i rundan �r f�rdigspelade (b�st av 3) kan ing�.
@@ -57,8 +43,24 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
     {
         try
         {
-            // TODO: Implement actual tournament status logic
-            return Ok(new { message = "Tournament status retrieved", status = "active" });
+            var currentTournament = tournament.GetCurrentTournament();
+            if (currentTournament == null || !tournament.HasActiveTournament)
+            {
+                return Ok(new { message = "No active tournament" });
+            }
+            
+            var currentRound = tournament.GetCurrentRound();
+            
+            var response = new
+            {
+                tournamentActive = true,
+                playerName = currentTournament.PlayerName,
+                currentRound = currentTournament.CurrentRound,
+                totalRounds = currentTournament.TotalRounds,
+                pairs = currentRound?.Pairs
+            };
+            
+            return Ok(response);
         }
         catch (Exception ex)
         {
@@ -66,8 +68,7 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
         }
     }
 
-
-    // GET	    /tournament/final	Returnerar slutresultatet och vinnare n�r alla rundor �r spelade.
+    // GET	    /tournament/final	Returnerar slutresultatet och vinnare när alla rundor är spelade.
     [HttpGet("tournament/final")]
     public IActionResult GetFinalResult()
     {

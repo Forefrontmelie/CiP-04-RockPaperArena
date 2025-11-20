@@ -29,6 +29,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<ITournamentService, TournamentService>();
 builder.Services.AddSingleton<IParticipantRepository, ParticipantRepository>();
 builder.Services.AddSingleton<IPairingStrategy, RoundRobinPairingStrategy>();
+builder.Services.AddScoped<IGameService, GameService>();
 
 var app = builder.Build();
 

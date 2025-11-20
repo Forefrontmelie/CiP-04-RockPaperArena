@@ -11,6 +11,8 @@ public interface ITournamentService
     Tournament? GetCurrentTournament();
     RoundDTO? GetCurrentRound();
     List<PairDTO>? GetCurrentRoundPairs();
+    void AdvanceTournament();
+    
 
     // Round and pairing methods
     RoundDTO GetPairsForSpecificRound(int d);
@@ -34,5 +36,6 @@ public interface ITournamentService
     // Optional printing methods (for debugging/console output)
     void PrintRound(int roundNumber);
     void PrintMessage(string message);
+ 
 }
 

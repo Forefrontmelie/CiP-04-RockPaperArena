@@ -11,7 +11,7 @@ public class RoundRobinPairingStrategy : IPairingStrategy
     public IList<Participant> RotateParticipants(List<Participant> participants, int roundNbr)
     {
         if (participants == null || participants.Count < 2)
-            return participants;
+            return participants ?? new List<Participant>();
 
         if (roundNbr < 1)
             throw new ArgumentException("The number of the round must be >= 1");
@@ -54,7 +54,7 @@ public class RoundRobinPairingStrategy : IPairingStrategy
     private static List<T> RotateWithFixedFirst<T>(List<T> items, int roundNbr)
     {
         if (items == null || items.Count < 2)
-            return items;
+            return items ?? new List<T>();
 
         if (roundNbr < 1)
             throw new ArgumentException("roundNbr must be >= 1");

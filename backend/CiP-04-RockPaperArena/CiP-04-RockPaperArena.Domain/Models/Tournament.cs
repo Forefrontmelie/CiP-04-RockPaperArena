@@ -10,6 +10,8 @@ public class Tournament
     public IList<RoundDTO> Rounds { get; set; }
     public bool IsActive { get; set; }
 
+    public List<MatchResult> MatchResults { get; set; }
+
     public Tournament(string playerName, IList<Participant> participants)
     {
         PlayerName = playerName;
@@ -17,6 +19,7 @@ public class Tournament
         CurrentRound = 1;
         Rounds = new List<RoundDTO>();
         IsActive = true;
+        MatchResults = new List<MatchResult>();
     }
 
     public int TotalRounds => Participants.Count - 1;

@@ -9,16 +9,18 @@ public class TournamentService : ITournamentService
 {
     public IParticipantRepository ParticipantRepository { get; }
     public IPairingStrategy PairingStrategy { get; }
+    public IGameService GameService { get; }
 
     private IList<Participant> Participants { get; set; }
     private Tournament? CurrentTournament { get; set; }
-    private IList<List<PairDTO>> Rounds { get; init; }
 
 
-    public TournamentService(IParticipantRepository participantRepository, IPairingStrategy pairingStrategy)
+    public TournamentService(IParticipantRepository participantRepository, IPairingStrategy pairingStrategy, IGameService gameService)
     {
         ParticipantRepository = participantRepository;
         PairingStrategy = pairingStrategy;
+        GameService = gameService;
+        Participants = new List<Participant>();
 
         UpdateParticipantsList();
     }
@@ -79,7 +81,7 @@ public class TournamentService : ITournamentService
         UpdateParticipantsList();
         
         // Generate the first round using the pairing strategy
-        GenerateNextRound();       
+        GenerateNextRound();
     }
 
     private void GenerateNextRound()
@@ -90,7 +92,6 @@ public class TournamentService : ITournamentService
         if (CurrentTournament.IsCompleted)
             throw new InvalidOperationException("Tournament is already completed");
 
-
         var rotatedParticipants = PairingStrategy.RotateParticipants(new List<Participant>(Participants), CurrentTournament.Rounds.Count + 1);
         Participants = rotatedParticipants;
 
@@ -98,10 +99,6 @@ public class TournamentService : ITournamentService
         
         CurrentTournament.Rounds.Add(pairs);
     }
-
-
-
-
 
     public bool HasActiveTournament => CurrentTournament?.IsActive == true;
     
@@ -122,6 +119,11 @@ public class TournamentService : ITournamentService
     }
 
 
+
+    public void AdvanceTournament()
+    {
+        throw new NotImplementedException();
+    }
 
 
 
@@ -283,7 +285,6 @@ public class TournamentService : ITournamentService
     {
         Console.WriteLine(message);
     }
-
 
 }
 
