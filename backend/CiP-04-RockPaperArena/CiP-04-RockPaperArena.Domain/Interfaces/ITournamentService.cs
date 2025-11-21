@@ -14,6 +14,8 @@ public interface ITournamentService
     void AdvanceTournament();
     Match PlayMove(int intMove);
 
+    public StatusDTO GetPlayersCurrentGameStatus();
+
 
     // Round and pairing methods
     RoundDTO GetPairsForSpecificRound(int d);

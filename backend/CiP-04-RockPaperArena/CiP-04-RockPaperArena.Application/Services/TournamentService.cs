@@ -79,7 +79,7 @@ public class TournamentService : ITournamentService
         
         // Add the human player (get next available ID)
         int humanPlayerId = availableParticipants.Any() ? availableParticipants.Max(p => p.Id) + 1 : 1;
-        tournamentParticipants.Add(new HumanParticipant(name, humanPlayerId));
+        tournamentParticipants.Add(new HumanParticipant(name, humanPlayerId));         //  <<<<<------ LÄGGS ENBART TILL I TS-PARTICIPANTS - LÄGGA TILL I PARTICIPANTREPOSITORY OCKSÅ?
         
         // Add AI participants (take the first n-1 from repository)
         var selectedAI = availableParticipants.Take(players - 1).ToList();
@@ -91,8 +91,8 @@ public class TournamentService : ITournamentService
 
         UpdateTSParticipantsList();    // Uppdaterar Participants-listan här i TournamentService 
         GenerateAllPlayerScheduleMap(); // Genererar schema för alla rundor direkt vid start
-                                        
-        GenerateNextRound();
+
+        PerformAiMatches();
     }
 
     public void GenerateAllPlayerScheduleMap()
@@ -116,36 +116,19 @@ public class TournamentService : ITournamentService
     }
 
 
-/*
-    public Dictionary<int, IList<Match>> GetPlayerScheduleMap(int id)
+    public void PerformAiMatches()
     {
-        int index = ConvertIdToIndex(id);
+        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentRound = currentTournament.CurrentRound;
 
-        Participant player = GetParticipant(index);
-        string playerName = player.Name;
+        var updatedSchedule = GameService.PlayAiMatchesCurrentRound(currentTournament.RoundSchedule, currentRound);
 
-        int totalRounds = GetMaxNumberOfRounds(Participants.Count);
-        Dictionary<int, IList<Match>> schedule = new Dictionary<int, IList<Match>>();
-
-        var listOfMatchesForCurrentRound = new List<Match>();
-
-        for (int round = 1; round <= totalRounds; round++)
-        {
-            int opponentIndex = PairingStrategy.GetOpponentIndex(index, Participants.Count, round);
-            Participant opponent = Participants[opponentIndex];
-
-            listOfMatchesForCurrentRound.Add(new Match(player, opponent, round));
-
-            schedule.Add(round, listOfMatchesForCurrentRound);
-        }
-
-        return schedule;
+        currentTournament.RoundSchedule = updatedSchedule;
+        TournamentRepository.SaveTournament(currentTournament);
     }
-*/
 
 
-
-
+/*
     // Generates the next round of pairings and adds it to the current tournament
     private void GenerateNextRound()
     {
@@ -159,14 +142,6 @@ public class TournamentService : ITournamentService
         var currentRound = currentTournament.CurrentRound;
         if (currentRound == null) return;
 
-        // Check if all matches in the current round are completed     <<<--------------------------- ONÖDIG?
-        //int matchesInRound = Participants.Count / 2;
-        //int completedMatches = currentTournament.MatchResults
-        //    .Count(mr => mr.RoundNumber == currentRound.Round);
-       // if (completedMatches < matchesInRound)
-        //    throw new InvalidOperationException("Not all matches in the current round are completed");
-
-
 
         var rotatedParticipants = PairingStrategy.RotateParticipants(new List<Participant>(Participants), currentRound + 1);
         Participants = rotatedParticipants;
@@ -179,7 +154,7 @@ public class TournamentService : ITournamentService
         // Save the updated tournament
         TournamentRepository.SaveTournament(currentTournament);        
     }
-
+*/
 
   
 
@@ -206,29 +181,42 @@ public class TournamentService : ITournamentService
     public Match PlayMove(int intMove)   // LÄGG TILL best of 3   --   och ÄNDRA TILL MatchResultDTO!
     {
         var currentTournament = TournamentRepository.GetCurrentTournament();
-
         if (currentTournament == null || !currentTournament.IsActive)
             throw new InvalidOperationException("No active tournament");
 
         Move move = (Move)intMove;  // Convert int to Move enum
+        var currentRound = currentTournament.CurrentRound;
+
+        var matchesThisRound = currentTournament.RoundSchedule[currentRound];
+        var humanMatch = matchesThisRound[0];
+
+        if (humanMatch.IsComplete)
+            throw new InvalidOperationException("Your match is already complete.");
 
 
+        var updatedSchedule = GameService.PlayHumanMatchCurrentRound(currentTournament.RoundSchedule, currentRound, move);
 
-
-
-        // Get human player and opponent using existing methods
-        var humanPlayer = GetParticipantById(currentTournament.HumanPlayerId);
-        var opponent = GetOpponentParticipant(currentTournament.HumanPlayerId, currentTournament.CurrentRound);
-
-        // Play the game
-        var matchResult = GameService.PlayMatch(humanPlayer, opponent, currentTournament.CurrentRound, move);
-
-        // ÄNDRA NEDAN!!!  --------------- Måste in i RoundSchedule ich uppdatera de olika matcherna!!!!! Inte lägga till nya. -------------------
-        //currentTournament.RoundSchedule.Add(currentTournament.CurrentRound, matchResult);
-
+        currentTournament.RoundSchedule = updatedSchedule;
         TournamentRepository.SaveTournament(currentTournament);
 
-        return matchResult;
+        var updatedHumanMatch = updatedSchedule[currentRound][0];
+
+        return updatedHumanMatch;
+    }
+
+
+    public StatusDTO GetPlayersCurrentGameStatus()
+    {
+        var currentTournament = TournamentRepository.GetCurrentTournament();
+        if (currentTournament == null || !currentTournament.IsActive)
+            throw new InvalidOperationException("No active tournament");
+
+        var currentRound = currentTournament.CurrentRound;
+
+        var hm = currentTournament.RoundSchedule[currentRound][0];
+
+        return new StatusDTO(hm.Player, hm.Opponent, hm.currentRound, hm.player1Wins, hm.player1Wins, hm.draw, hm.IsComplete);
+
     }
 
 
@@ -255,7 +243,7 @@ public class TournamentService : ITournamentService
         if (!currentTournament.IsCompleted)
         {
             currentTournament.CurrentRound++;
-            GenerateNextRound();
+           // GenerateNextRound();
         }
         else
         {
@@ -386,7 +374,9 @@ public class TournamentService : ITournamentService
         {
             Participant Player1 = rotatedParticipants[i];
             Participant Player2 = rotatedParticipants[rotatedParticipants.Count - 1 - i];
-            pairs.Add(new Match(Player1, Player2, roundNbr));
+            Match match = new Match(Player1, Player2);
+            match.currentRound = roundNbr;
+            pairs.Add(match);
         }
         return pairs;
     }

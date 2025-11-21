@@ -51,16 +51,8 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
                 return Ok(new { message = "No active tournament" });
             }
             
-            var currentRound = tournament.GetCurrentRoundNumber();
-            
-            var response = new                         // Skapa DTO för detta? 
-            {
-                tournamentActive = true,
-                playerName = currentTournament.HumanPlayerName,
-                currentRound = currentTournament.CurrentRound,
-                totalRounds = currentTournament.TotalRounds,
-               // pairs = currentRound?.Pairs
-            };
+            var currentRound = tournament.GetCurrentRoundNumber();            
+            var response = tournament.GetPlayersCurrentGameStatus();
             
             return Ok(response);
         }
@@ -83,9 +75,11 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
             var result = tournament.PlayMove(move);
             return Ok(new
             {
+                /*
                 result = result.Result.ToString(),
                 humanMove = result.Player1Move.ToString(),
                 opponentMove = result.Player2Move.ToString()
+                */
             });
         }
         catch (Exception ex)
