@@ -49,9 +49,9 @@ public class GameService : IGameService
     }
 
 
-    public MatchResult PlayMatch(Participant player1, Participant player2, int roundNumber, Move? humanMove = null)
+    public Match PlayMatch(Participant player1, Participant player2, int roundNumber, Move? humanMove = null)   //   <<<---------------- ÄNDRA SÅ HANTERAR BEST OF 3 - och sparar detta i MatchResult!
     {
-        var matchResult = new MatchResult(player1, player2, roundNumber);
+        var matchResult = new Match(player1, player2, roundNumber);
 
         // Determine moves for both players
         Move player1Move;
@@ -106,3 +106,4 @@ public class GameService : IGameService
 
     
 
+ 

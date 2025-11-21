@@ -6,5 +6,6 @@ public class MatchPair(int round, Participant player1, Participant player2)
     public Participant Player1 { get; init; } = player1;
     public Participant Player2 { get; init; } = player2;
     public string Opponent => Player2.Name;   //Computed property
+    public string Player => Player1.Name;   //Computed property
 
 }

@@ -4,7 +4,7 @@ using CiP_04_RockPaperArena.Domain.Interfaces;
 
 namespace CiP_04_RockPaperArena.Infrastructure;
 
-public class ParticipantRepository : IParticipantRepository
+public class ParticipantRepository : IParticipantRepository       // Lägg till lock el.del för Thread-safety
 
 {
     public IList<Participant> Participants { get; private set; }

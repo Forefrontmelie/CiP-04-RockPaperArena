@@ -1,9 +1,10 @@
+using CiP_04_RockPaperArena.Application.Services;
 using CiP_04_RockPaperArena.Domain.Dtos;
 using CiP_04_RockPaperArena.Domain.Interfaces;
 using CiP_04_RockPaperArena.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CiP_04_RockPaperArena.Api.Controllers;
+namespace CiP_04_RockPaperArena.Api.Controllers; // ------------------ !!!!!! Lägg till: Task<IActionResult> och async och await !!!!!! ------------------ //
 
 [ApiController]
 [Route("[controller]")]
@@ -18,15 +19,16 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
         try
         {
             tournament.StartTournament(dto.name, dto.players);
-            var currentRound = tournament.GetCurrentRound();
+
+            var currentRound = tournament.GetCurrentRoundNumber();
             
             return Ok(new { 
                 message = "Tournament started successfully", 
                 playerName = dto.name, 
                 totalPlayers = dto.players,
-                currentRound = currentRound?.Round,
+                currentRound = currentRound,
                 totalRounds = tournament.GetMaxNumberOfRounds(dto.players),
-                pairs = currentRound?.Pairs
+               // pairs = currentRound?.Pairs
             });
         }
         catch (Exception ex)
@@ -49,15 +51,15 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
                 return Ok(new { message = "No active tournament" });
             }
             
-            var currentRound = tournament.GetCurrentRound();
+            var currentRound = tournament.GetCurrentRoundNumber();
             
-            var response = new
+            var response = new                         // Skapa DTO för detta? 
             {
                 tournamentActive = true,
-                playerName = currentTournament.PlayerName,
+                playerName = currentTournament.HumanPlayerName,
                 currentRound = currentTournament.CurrentRound,
                 totalRounds = currentTournament.TotalRounds,
-                pairs = currentRound?.Pairs
+               // pairs = currentRound?.Pairs
             };
             
             return Ok(response);
@@ -67,6 +69,33 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
             return BadRequest(new { error = ex.Message });
         }
     }
+
+
+
+    // POST	/tournament/play	Spelar ett drag i den aktuella matchen f�r din deltagare.
+    // Body: { "move": 1 } (0 = Rock, 1 = Paper, 2 = Scissors).
+    // Returnerar resultatet av draget, din motst�ndares drag och aktuell score i matchen.
+    [HttpPost("tournament/play")]
+    public IActionResult PlayMove([FromBody] int move)
+    {
+        try
+        {
+            var result = tournament.PlayMove(move);
+            return Ok(new
+            {
+                result = result.Result.ToString(),
+                humanMove = result.Player1Move.ToString(),
+                opponentMove = result.Player2Move.ToString()
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+
+
 
     // GET	    /tournament/final	Returnerar slutresultatet och vinnare när alla rundor är spelade.
     [HttpGet("tournament/final")]

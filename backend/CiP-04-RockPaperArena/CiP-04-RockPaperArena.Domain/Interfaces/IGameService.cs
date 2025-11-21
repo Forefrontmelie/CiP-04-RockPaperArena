@@ -11,7 +11,7 @@ public interface IGameService
     Move GenerateRandomMove();
       
     /// Plays a complete match between two participants   
-    MatchResult PlayMatch(Participant player1, Participant player2, int roundNumber, Move? humanMove = null);
+    Match PlayMatch(Participant player1, Participant player2, int roundNumber, Move? humanMove = null);
 
 
 

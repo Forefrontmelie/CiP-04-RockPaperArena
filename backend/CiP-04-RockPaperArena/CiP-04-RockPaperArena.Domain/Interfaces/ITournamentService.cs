@@ -7,12 +7,13 @@ public interface ITournamentService
 {
     // Tournament management
     void StartTournament(string name, int players);
-    bool HasActiveTournament { get; }
     Tournament? GetCurrentTournament();
-    RoundDTO? GetCurrentRound();
-    List<PairDTO>? GetCurrentRoundPairs();
+    public int GetCurrentRoundNumber();
+    public bool HasActiveTournament { get; }
+    //List<PairDTO>? GetCurrentRoundPairs();
     void AdvanceTournament();
-    
+    Match PlayMove(int intMove);
+
 
     // Round and pairing methods
     RoundDTO GetPairsForSpecificRound(int d);
@@ -29,13 +30,11 @@ public interface ITournamentService
     Participant GetOpponentParticipant(int i, int d);
     
     // Utility methods
-    PlayerScheduleDTO GetPlayerSchedule(int i);
+    PlayerScheduleDTO GetPlayerScheduleDTO(int i);
     int ConvertIdToIndex(int id);
-    void UpdateParticipantsList();
+    void UpdateTSParticipantsList();
     
-    // Optional printing methods (for debugging/console output)
-    void PrintRound(int roundNumber);
-    void PrintMessage(string message);
+
  
 }
 
