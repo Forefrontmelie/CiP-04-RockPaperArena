@@ -8,8 +8,10 @@ public class Tournament
     public int CurrentRound { get; set; }
     public Dictionary<int, IList<Match>> RoundSchedule { get; set; }
     public bool IsActive { get; set; }
+    public bool IsFinished { get; set; }
 
-    // public List<Match> MatchResults { get; set; }
+    public HashSet<int> ScoredRounds { get; set; } 
+    public Scoreboard Scoreboard { get; set; }
 
     public int TotalRounds => Participants.Count - 1;
     public bool IsCompleted => CurrentRound > TotalRounds;
@@ -19,7 +21,10 @@ public class Tournament
         Participants = participants;
         CurrentRound = 1;
         RoundSchedule = new Dictionary<int, IList<Match>>();
+        Scoreboard = new Scoreboard(Participants, CurrentRound);
         IsActive = true;
+        IsFinished = false;
+        ScoredRounds = new HashSet<int>();
     }
 
 

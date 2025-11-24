@@ -7,6 +7,7 @@ public class Match
     public bool IsComplete { get; set; }
 
     public int currentRound { get; set; }
+    public int subRound { get; set; }
     public int player1Wins { get; set; }
     public int player2Wins { get; set; }
     public int draw { get; set; }
@@ -22,6 +23,7 @@ public class Match
         IsComplete = false;
 
         currentRound = 1;
+        subRound = 0;
         player1Wins = 0;
         player2Wins = 0;
         draw = 0;

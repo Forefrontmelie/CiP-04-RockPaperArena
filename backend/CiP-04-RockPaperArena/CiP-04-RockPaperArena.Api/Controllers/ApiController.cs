@@ -50,9 +50,8 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
             {
                 return Ok(new { message = "No active tournament" });
             }
-            
-            var currentRound = tournament.GetCurrentRoundNumber();            
-            var response = tournament.GetPlayersCurrentGameStatus();
+                
+            var response = tournament.GetHumanPlayersCurrentGameStatus();
             
             return Ok(response);
         }
@@ -72,15 +71,10 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
     {
         try
         {
-            var result = tournament.PlayMove(move);
-            return Ok(new
-            {
-                /*
-                result = result.Result.ToString(),
-                humanMove = result.Player1Move.ToString(),
-                opponentMove = result.Player2Move.ToString()
-                */
-            });
+            tournament.PlayMove(move);
+            var response = tournament.GetHumanPlayersCurrentGameStatus();
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
@@ -89,6 +83,23 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
     }
 
 
+    // POST	/tournament/advance
+    [HttpPost("tournament/advance")]
+    public IActionResult AdvanceTournament()
+    {
+        try
+        {
+            //tournament.PerformAiMatches();
+            tournament.AdvanceRound();
+            var response = tournament.GetScoreboard();
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 
 
     // GET	    /tournament/final	Returnerar slutresultatet och vinnare när alla rundor är spelade.
@@ -97,8 +108,8 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
     {
         try
         {
-            // TODO: Implement actual final result logic
-            return Ok(new { message = "Final result retrieved", winner = "TBD", results = new object[] { } });
+            var response = tournament.GetScoreboard();
+            return Ok(response);
         }
         catch (Exception ex)
         {

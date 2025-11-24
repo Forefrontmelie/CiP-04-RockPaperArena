@@ -90,9 +90,7 @@ public class TournamentService : ITournamentService
         TournamentRepository.SaveTournament(tournament);
 
         UpdateTSParticipantsList();    // Uppdaterar Participants-listan här i TournamentService 
-        GenerateAllPlayerScheduleMap(); // Genererar schema för alla rundor direkt vid start
-
-        PerformAiMatches();
+        GenerateAllPlayerScheduleMap(); // Genererar schema för alla rundor direkt vid start        
     }
 
     public void GenerateAllPlayerScheduleMap()
@@ -116,6 +114,76 @@ public class TournamentService : ITournamentService
     }
 
 
+
+
+
+    public void AdvanceRound()
+    {
+        var currentTournament = TournamentRepository.GetCurrentTournament();
+        if (currentTournament == null || !currentTournament.IsActive)
+            throw new InvalidOperationException("No active tournament");
+
+        var currentRound = currentTournament.CurrentRound;
+
+        // Check: Ensure human match is complete before advancing
+        if (!currentTournament.RoundSchedule.ContainsKey(currentRound))
+            throw new InvalidOperationException($"Round {currentRound} schedule not found");
+
+        var humanMatch = currentTournament.RoundSchedule[currentRound][0];
+        if (!humanMatch.IsComplete)
+            throw new InvalidOperationException("Cannot advance: Human match is not complete yet");
+
+        // Check: Ensure AI matches haven't already been played for this round
+        var aiMatches = currentTournament.RoundSchedule[currentRound].Skip(1).ToList();
+        bool allAiMatchesComplete = aiMatches.All(m => m.IsComplete);
+
+        if (!allAiMatchesComplete)
+        {
+            // Play AI matches only if they haven't been completed yet
+            Console.WriteLine($"Playing AI matches for round {currentRound}");
+            GameService.PlayAiMatchesCurrentRound(currentTournament.RoundSchedule, currentRound);
+        }
+        else
+        {
+            throw new InvalidOperationException("Cannot advance: AI matches for round {currentRound} already complete"); 
+            Console.WriteLine($"AI matches for round {currentRound} already complete, skipping");
+        }
+
+        // Update scoreboard only once per round
+        // Check if this round has already been scored
+        if (!currentTournament.ScoredRounds.Contains(currentRound))
+        {
+            Console.WriteLine($"Updating scoreboard for round {currentRound}");
+            currentTournament.Scoreboard = GameService.UpdateScoreboard(
+                currentTournament.RoundSchedule,
+                currentTournament.Scoreboard,
+                currentRound
+            );
+            currentTournament.ScoredRounds.Add(currentRound);
+        }
+        else
+        {
+            Console.WriteLine($"Round {currentRound} already scored, skipping scoreboard update");
+        }
+
+        // Advance to next round
+        if (currentRound < currentTournament.TotalRounds)
+        {
+            currentTournament.CurrentRound++;        /// !!!!!!!   INTE SÄKER PÅ ATT DENNA SKA VARA HÄR !!!!
+            Console.WriteLine($"Advanced to round {currentTournament.CurrentRound} --- OBS! currentRound++ bortplockad här pga stoppar uppdateringen mid-match för human annars");
+        }
+        else
+        {
+            currentTournament.IsActive = false;
+            currentTournament.IsFinished = true;
+            Console.WriteLine("Tournament finished");
+        }
+
+        TournamentRepository.SaveTournament(currentTournament);
+    }
+
+
+
     public void PerformAiMatches()
     {
         var currentTournament = TournamentRepository.GetCurrentTournament();
@@ -124,50 +192,48 @@ public class TournamentService : ITournamentService
         var updatedSchedule = GameService.PlayAiMatchesCurrentRound(currentTournament.RoundSchedule, currentRound);
 
         currentTournament.RoundSchedule = updatedSchedule;
+        UpdateScoreboard();
         TournamentRepository.SaveTournament(currentTournament);
     }
 
 
-/*
-    // Generates the next round of pairings and adds it to the current tournament
-    private void GenerateNextRound()
+
+
+
+    public void UpdateScoreboard()
     {
         var currentTournament = TournamentRepository.GetCurrentTournament();
-
         if (currentTournament == null || !currentTournament.IsActive)
-            throw new InvalidOperationException("No active tournament");            
-        if (currentTournament.IsCompleted)
-            throw new InvalidOperationException("Tournament is already completed");
+            throw new InvalidOperationException("No active tournament");
 
         var currentRound = currentTournament.CurrentRound;
-        if (currentRound == null) return;
 
+        var currentScoreboard = currentTournament.Scoreboard;
 
-        var rotatedParticipants = PairingStrategy.RotateParticipants(new List<Participant>(Participants), currentRound + 1);
-        Participants = rotatedParticipants;
+        currentTournament.Scoreboard = GameService.UpdateScoreboard(currentTournament.RoundSchedule, currentScoreboard, currentRound);
+        TournamentRepository.SaveTournament(currentTournament);
 
-        var pairs = GetMatchListForSpecificRound(currentRound + 1);
-
-        currentTournament.RoundSchedule.Add(currentRound + 1, pairs);
-
-        currentTournament.CurrentRound++;
-        // Save the updated tournament
-        TournamentRepository.SaveTournament(currentTournament);        
     }
-*/
-
-  
 
 
-
-    // Returns the list of pairs for the current round
-  /*  public List<PairDTO>? GetCurrentRoundPairs()
+    public ScoreboardDTO GetScoreboard()
     {
         var currentTournament = TournamentRepository.GetCurrentTournament();
+        if (currentTournament == null || !currentTournament.IsActive)
+            throw new InvalidOperationException("No active tournament");
+
         var currentRound = currentTournament.CurrentRound;
-        return currentRound?.Pairs.ToList();
+
+        var currentScoreboard = currentTournament.Scoreboard;
+
+        return new ScoreboardDTO(currentScoreboard); 
+
     }
-  */
+
+
+
+
+
 
 
 
@@ -205,7 +271,7 @@ public class TournamentService : ITournamentService
     }
 
 
-    public StatusDTO GetPlayersCurrentGameStatus()
+    public StatusDTO GetHumanPlayersCurrentGameStatus()
     {
         var currentTournament = TournamentRepository.GetCurrentTournament();
         if (currentTournament == null || !currentTournament.IsActive)
@@ -215,54 +281,9 @@ public class TournamentService : ITournamentService
 
         var hm = currentTournament.RoundSchedule[currentRound][0];
 
-        return new StatusDTO(hm.Player, hm.Opponent, hm.currentRound, hm.player1Wins, hm.player1Wins, hm.draw, hm.IsComplete);
+        return new StatusDTO(hm.Player, hm.Opponent, hm.currentRound, hm.subRound, hm.player1Wins, hm.player2Wins, hm.draw, hm.IsComplete);
 
     }
-
-
-
-
-    // Advances the tournament - simulates all the AI matches in the current round and generates the next round
-    public void AdvanceTournament()
-    {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
-
-        if (currentTournament == null || !currentTournament.IsActive)
-            throw new InvalidOperationException("No active tournament");
-
-        var currentRound = currentTournament.CurrentRound;
-        if (currentRound == null) return;
-
-
-
-        // Simulate all AI vs AI matches using existing methods
-        // <<<<-----------------------------------------------                              !!!!!!!! IMPLEMENT!
-
-
-        // Generate next round if tournament not complete
-        if (!currentTournament.IsCompleted)
-        {
-            currentTournament.CurrentRound++;
-           // GenerateNextRound();
-        }
-        else
-        {
-            currentTournament.IsActive = false; // Tournament finished
-        }
-
-        TournamentRepository.SaveTournament(currentTournament);
-    }
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -11,15 +11,13 @@ public interface IGameService
 
 
     /// Plays a single Rock Paper Scissors game
-    GameResult PlayGame(Move player1Move, Move player2Move);
-       
+    public void PlayGame(Move player1Move, Move player2Move, Match match);
+
     /// Generates random move for AI players   
     Move GenerateRandomMove();
       
     /// Plays a complete match between two participants   
     Match PlayMatch(Match match, int roundNumber, Move? humanMove);
-
-
-
-
+    Scoreboard UpdateScoreboard(Dictionary<int, IList<Match>> roundSchedule, Scoreboard currentScoreboard, int currentRound);
+    public int CalculatePoints(int wins, int losses, int draws);
 }

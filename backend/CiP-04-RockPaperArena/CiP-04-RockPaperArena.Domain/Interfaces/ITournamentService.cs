@@ -10,11 +10,13 @@ public interface ITournamentService
     Tournament? GetCurrentTournament();
     public int GetCurrentRoundNumber();
     public bool HasActiveTournament { get; }
-    //List<PairDTO>? GetCurrentRoundPairs();
-    void AdvanceTournament();
+    //List<PairDTO>? GetCurrentRoundPairs();  
     Match PlayMove(int intMove);
+    public void PerformAiMatches();
+    public void AdvanceRound();
 
-    public StatusDTO GetPlayersCurrentGameStatus();
+    public StatusDTO GetHumanPlayersCurrentGameStatus();
+    public ScoreboardDTO GetScoreboard();
 
 
     // Round and pairing methods
