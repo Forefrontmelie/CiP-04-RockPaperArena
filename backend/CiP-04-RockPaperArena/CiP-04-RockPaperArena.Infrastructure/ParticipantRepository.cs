@@ -47,7 +47,7 @@ public class ParticipantRepository : IParticipantRepository       // Lägg till 
 
     }
 
-    public void AddParticipant(string name)
+    public Task AddParticipantAsync(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Name must not be empty.", nameof(name));
@@ -58,15 +58,17 @@ public class ParticipantRepository : IParticipantRepository       // Lägg till 
 
 
         Console.WriteLine($"Added participant: {participant.Name} with Id: {participant.Id}");
+        return Task.CompletedTask;
     }
 
-    public void RemoveParticipant(int id)
+    public Task RemoveParticipantAsync(int id)
     {
         var participant = Participants.FirstOrDefault(p => p.Id == id);
         if (participant == null)
             throw new ArgumentException("No Participant with that Id exist. ", nameof(id));
 
         Participants.Remove(participant);
+        return Task.CompletedTask;
     }
 
     public void RemoveParticipantByIndex(int index)
@@ -77,22 +79,22 @@ public class ParticipantRepository : IParticipantRepository       // Lägg till 
         }
     }
 
-    public IList<Participant> GetAllParticipants()
+    public Task<IList<Participant>> GetAllParticipantsAsync()
     {
         if (Participants.Count == 0)
             throw new InvalidOperationException("No participants available.");
 
-        return Participants;
+        return Task.FromResult(Participants);
     }
 
-    public Participant? GetParticipantById(int id)      // <<<<-------------------- ÄNDRA TILL INDEX! Antingen input eller konverta om från id till index.
+    public Task<Participant?> GetParticipantByIdAsync(int id)      // <<<<-------------------- ÄNDRA TILL INDEX! Antingen input eller konverta om från id till index.
     {
 
         if (id >= 0 && id < Participants.Count)
         {
-            return Participants[id];
+            return Task.FromResult<Participant?>(Participants[id]);
         }
-        return null;
+        return Task.FromResult<Participant?>(null);
     }
 
 

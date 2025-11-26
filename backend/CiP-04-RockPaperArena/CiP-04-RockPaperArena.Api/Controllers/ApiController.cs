@@ -4,31 +4,28 @@ using CiP_04_RockPaperArena.Domain.Interfaces;
 using CiP_04_RockPaperArena.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CiP_04_RockPaperArena.Api.Controllers; // ------------------ !!!!!! Lägg till: Task<IActionResult> och async och await !!!!!! ------------------ //
+namespace CiP_04_RockPaperArena.Api.Controllers; 
 
 [ApiController]
 [Route("[controller]")]
 public class ApiController(ITournamentService tournament, IParticipantRepository participant) : ControllerBase
 {
-
-    
-    // POST	/tournament/start Startar ny turnering.Skapar par f�r runda 1 baserat p� din round-robin-funktion.Body: { "name": "Alice", "players": 8 }.
+    // POST /tournament/start
     [HttpPost("tournament/start")]
-    public IActionResult StartTournament([FromBody] StartTournamentDto dto)
+    public async Task<IActionResult> StartTournament([FromBody] StartTournamentDto dto)
     {
         try
         {
-            tournament.StartTournament(dto.name, dto.players);
+            await tournament.StartTournamentAsync(dto.name, dto.players);
 
-            var currentRound = tournament.GetCurrentRoundNumber();
+            var currentRound = await tournament.GetCurrentRoundNumberAsync();
             
             return Ok(new { 
                 message = "Tournament started successfully", 
                 playerName = dto.name, 
                 totalPlayers = dto.players,
                 currentRound = currentRound,
-                totalRounds = tournament.GetMaxNumberOfRounds(dto.players),
-               // pairs = currentRound?.Pairs
+                totalRounds = tournament.GetMaxNumberOfRounds(dto.players)
             });
         }
         catch (Exception ex)
@@ -37,21 +34,19 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
         }
     }
 
-    // GET	    /tournament/status	
-    // Returnerar aktuell runda, din n�sta motst�ndare och scoreboard, samt information om delrundor i matchen, t.ex. "round": 1 of 3, "playerWins": 1, "opponentWins": 0.
-    // �ven status f�r om �vriga matcher i rundan �r f�rdigspelade (b�st av 3) kan ing�.
+    // GET /tournament/status
     [HttpGet("tournament/status")]
-    public IActionResult GetTournamentStatus()
+    public async Task<IActionResult> GetTournamentStatus()
     {
         try
         {
-            var currentTournament = tournament.GetCurrentTournament();
+            var currentTournament = await tournament.GetCurrentTournamentAsync();
             if (currentTournament == null || !tournament.HasActiveTournament)
             {
                 return Ok(new { message = "No active tournament" });
             }
                 
-            var response = tournament.GetHumanPlayersCurrentGameStatus();
+            var response = await tournament.GetHumanPlayersCurrentGameStatusAsync();
             
             return Ok(response);
         }
@@ -61,18 +56,14 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
         }
     }
 
-
-
-    // POST	/tournament/play	Spelar ett drag i den aktuella matchen f�r din deltagare.
-    // Body: { "move": 1 } (0 = Rock, 1 = Paper, 2 = Scissors).
-    // Returnerar resultatet av draget, din motst�ndares drag och aktuell score i matchen.
+    // POST /tournament/play
     [HttpPost("tournament/play")]
-    public IActionResult PlayMove([FromBody] int move)
+    public async Task<IActionResult> PlayMove([FromBody] int move)
     {
         try
         {
-            tournament.PlayMove(move);
-            var response = tournament.GetHumanPlayersCurrentGameStatus();
+            await tournament.PlayMoveAsync(move);
+            var response = await tournament.GetHumanPlayersCurrentGameStatusAsync();
 
             return Ok(response);
         }
@@ -82,35 +73,37 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
         }
     }
 
-
-    // POST	/tournament/advance
+    // POST /tournament/advance
     [HttpPost("tournament/advance")]
-    public IActionResult AdvanceTournament()
+    public async Task<IActionResult> AdvanceTournament()
     {
         try
         {
-        var currentTournament = tournament.GetCurrentTournament();
-        var roundBeforeAdvance = currentTournament.CurrentRound;
-        
-        tournament.AdvanceRound();
+            var currentTournament = await tournament.GetCurrentTournamentAsync();
+            if (currentTournament == null)
+                return BadRequest(new { error = "No active tournament" });
+            
+            var roundBeforeAdvance = currentTournament.CurrentRound;
+            
+            await tournament.AdvanceRoundAsync();
 
-        // Reload after advance
-        currentTournament = tournament.GetCurrentTournament();
-        
-        // Check if we just completed the final round
-        // (CurrentRound didn't increment because we were already at TotalRounds)
-        var justCompletedFinalRound = roundBeforeAdvance == currentTournament.TotalRounds 
-                                      && currentTournament.CurrentRound == currentTournament.TotalRounds;
+            // Reload after advance
+            currentTournament = await tournament.GetCurrentTournamentAsync();
+            if (currentTournament == null)
+                return BadRequest(new { error = "Tournament not found after advance" });
+            
+            var justCompletedFinalRound = roundBeforeAdvance == currentTournament.TotalRounds 
+                                          && currentTournament.CurrentRound == currentTournament.TotalRounds;
 
-        var response = new
-        {
-            message = justCompletedFinalRound
-                ? "Final round complete. Call /tournament/final to finish tournament."
-                : $"Round {roundBeforeAdvance} complete. Advanced to round {currentTournament.CurrentRound}.",
-            currentRound = currentTournament.CurrentRound,
-            totalRounds = currentTournament.TotalRounds,
-            scoreboard = tournament.GetScoreboard()
-        };
+            var response = new
+            {
+                message = justCompletedFinalRound
+                    ? "Final round complete. Call /tournament/final to finish tournament."
+                    : $"Round {roundBeforeAdvance} complete. Advanced to round {currentTournament.CurrentRound}.",
+                currentRound = currentTournament.CurrentRound,
+                totalRounds = currentTournament.TotalRounds,
+                scoreboard = await tournament.GetScoreboardAsync()
+            };
 
             return Ok(response);
         }
@@ -120,35 +113,30 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
         }
     }
 
-
-    // GET	    /tournament/final	Returnerar slutresultatet och vinnare när alla rundor är spelade.
+    // GET /tournament/final
     [HttpGet("tournament/final")]
-    public IActionResult GetFinalResult()
+    public async Task<IActionResult> GetFinalResult()
     {
         try
         {
-            // This will throw if tournament isn't ready to finish
-            tournament.FinishTournament();
+            await tournament.FinishTournamentAsync();
 
-            var scoreboard = tournament.GetScoreboard();
+            var scoreboard = await tournament.GetScoreboardAsync();
 
-        // Sort by points, then by wins
-        var sortedScores = scoreboard.scores.Values
-            .OrderByDescending(s => s.Points)
-            .ThenByDescending(s => s.Wins)
-            .ToList();
+            var sortedScores = scoreboard.scores.Values
+                .OrderByDescending(s => s.Points)
+                .ThenByDescending(s => s.Wins)
+                .ToList();
 
-        // Get the highest score
-        var highestPoints = sortedScores.First().Points;
-        var highestWins = sortedScores.First().Wins;
+            var highestPoints = sortedScores.First().Points;
+            var highestWins = sortedScores.First().Wins;
 
-        // Find all participants with the same highest score and wins (handling ties)
-        var winners = sortedScores
-            .Where(s => s.Points == highestPoints && s.Wins == highestWins)
-            .Select(s => s.Name)
-            .ToList();
+            var winners = sortedScores
+                .Where(s => s.Points == highestPoints && s.Wins == highestWins)
+                .Select(s => s.Name)
+                .ToList();
 
-        var isTie = winners.Count > 1;
+            var isTie = winners.Count > 1;
 
             return Ok(new
             {
@@ -166,23 +154,13 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
         }
     }
 
-
-
-
-
-
-
-
-
-    // ::::::::::::::::::::::::: PARTICIPANT ROUTES ::::::::::::::::::::::::: //
-
-    //GET		/participants/				Returnerar alla participants.
+    // GET /participants
     [HttpGet("participants")]
-    public IActionResult GetAllParticipants()
+    public async Task<IActionResult> GetAllParticipants()
     {
         try
         {
-            var participants = participant.GetAllParticipants();
+            var participants = await participant.GetAllParticipantsAsync();
             return Ok(participants);
         }
         catch (Exception ex)
@@ -191,11 +169,9 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
         }
     }
 
-
-
-    //POST	/player	(Bonus) 		L�gg till en ny deltagare i listan.
+    // POST /player
     [HttpPost("player")]
-    public IActionResult AddPlayer([FromBody] string name)
+    public async Task<IActionResult> AddPlayer([FromBody] string name)
     {
         try
         {
@@ -204,7 +180,7 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
                 return BadRequest(new { error = "Player name cannot be empty" });
             }
             
-            participant.AddParticipant(name);
+            await participant.AddParticipantAsync(name);
             return Ok(new { message = "Player added successfully", playerName = name });
         }
         catch (Exception ex)
@@ -213,9 +189,9 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
         }
     }
 
-    //DELETE	/player/:id	(Bonus) 	Ta bort en deltagare ur listan baserat p� ID.
+    // DELETE /player/:id
     [HttpDelete("player/{id}")]
-    public IActionResult RemovePlayer(int id)
+    public async Task<IActionResult> RemovePlayer(int id)
     {
         try
         {
@@ -224,7 +200,7 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
                 return BadRequest(new { error = "Invalid player ID" });
             }
             
-            participant.RemoveParticipant(id);
+            await participant.RemoveParticipantAsync(id);
             return Ok(new { message = "Player removed successfully", playerId = id });
         }
         catch (Exception ex)
@@ -232,5 +208,4 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
             return BadRequest(new { error = ex.Message });
         }
     }
-
 }

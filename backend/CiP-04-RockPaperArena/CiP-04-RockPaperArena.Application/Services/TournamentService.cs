@@ -18,7 +18,7 @@ public class TournamentService : ITournamentService
 
     public bool HasActiveTournament => TournamentRepository.HasActiveTournament();
 
-    public Tournament? GetCurrentTournament() => TournamentRepository.GetCurrentTournament();
+    public async Task<Tournament?> GetCurrentTournamentAsync() => await TournamentRepository.GetCurrentTournamentAsync();
 
     public TournamentService(IParticipantRepository participantRepository, ITournamentRepository tournamentRepository, IPairingStrategy pairingStrategy, IGameService gameService)
     {
@@ -28,14 +28,14 @@ public class TournamentService : ITournamentService
         GameService = gameService;
         Participants = new List<Participant>();
 
-        UpdateTSParticipantsList();
+        // Note: Can't call async method in constructor, will call in StartTournament
     }
 
 
 
-    public void UpdateTSParticipantsList()
+    public async Task UpdateTSParticipantsListAsync()
     {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentTournament = await TournamentRepository.GetCurrentTournamentAsync();
 
         if (currentTournament != null && currentTournament.IsActive)
         {
@@ -44,14 +44,20 @@ public class TournamentService : ITournamentService
         }
         else 
         {
-        Participants = new List<Participant>(ParticipantRepository.GetAllParticipants());
+        Participants = new List<Participant>(await ParticipantRepository.GetAllParticipantsAsync());
         }
     }
 
+public void UpdateTSParticipantsList()  // Synchronous method (no async, returns void)
+{
+    UpdateTSParticipantsListAsync()     // Call the async version (returns Task)
+        .GetAwaiter()                    // Get an object that can wait for completion
+        .GetResult();                    // Block and wait synchronously for the result
+}
 
-    public void StartTournament(string name, int players)
+    public async Task StartTournamentAsync(string name, int players)
     {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentTournament = await TournamentRepository.GetCurrentTournamentAsync();
 
         // Validation
         if (string.IsNullOrWhiteSpace(name))
@@ -64,12 +70,13 @@ public class TournamentService : ITournamentService
             throw new InvalidOperationException("A tournament is already in progress");
 
         // Check now when using seeded players
-        if (players > ParticipantRepository.GetAllParticipants().Count)
+        var allParticipants = await ParticipantRepository.GetAllParticipantsAsync();
+        if (players > allParticipants.Count)
             throw new ArgumentException("Number of players exceeds the number of seeded players. Please enter smaller number.", nameof(players));
 
 
         // Get all available participants from repository
-        var availableParticipants = ParticipantRepository.GetAllParticipants().ToList();
+        var availableParticipants = allParticipants.ToList();
         
         if (availableParticipants.Count < players - 1)
             throw new InvalidOperationException($"Not enough participants available. Need {players - 1} AI participants, but only {availableParticipants.Count} available");
@@ -87,15 +94,15 @@ public class TournamentService : ITournamentService
         
         // Create and start the tournament
         var tournament = new Tournament(name, humanPlayerId, tournamentParticipants);        
-        TournamentRepository.SaveTournament(tournament);
+        await TournamentRepository.SaveTournamentAsync(tournament);
 
-        UpdateTSParticipantsList();    // Uppdaterar Participants-listan här i TournamentService 
-        GenerateAllPlayerScheduleMap(); // Genererar schema för alla rundor direkt vid start        
+        await UpdateTSParticipantsListAsync();    // Uppdaterar Participants-listan här i TournamentService 
+        await GenerateAllPlayerScheduleMapAsync(); // Genererar schema för alla rundor direkt vid start     
     }
 
-    public void GenerateAllPlayerScheduleMap()
+    public async Task GenerateAllPlayerScheduleMapAsync()
     {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentTournament = await TournamentRepository.GetCurrentTournamentAsync();
         if (currentTournament == null || !currentTournament.IsActive)
             throw new InvalidOperationException("No active tournament");
 
@@ -110,16 +117,16 @@ public class TournamentService : ITournamentService
         }
 
         currentTournament.RoundSchedule = scheduleMap;
-        TournamentRepository.SaveTournament(currentTournament);
+        await TournamentRepository.SaveTournamentAsync(currentTournament);
     }
 
 
 
 
 
-    public void AdvanceRound()
+    public async Task AdvanceRoundAsync()
     {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentTournament = await TournamentRepository.GetCurrentTournamentAsync();
         if (currentTournament == null || !currentTournament.IsActive)
             throw new InvalidOperationException("No active tournament");
 
@@ -177,13 +184,13 @@ public class TournamentService : ITournamentService
             Console.WriteLine($"All {currentTournament.TotalRounds} rounds complete. Call /tournament/final to finish.");
         }
 
-        TournamentRepository.SaveTournament(currentTournament);
+        await TournamentRepository.SaveTournamentAsync(currentTournament);
     }
 
 
-    public void FinishTournament()
+    public async Task FinishTournamentAsync()
     {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentTournament = await TournamentRepository.GetCurrentTournamentAsync();
 
         // Debug logging
         Console.WriteLine($"=== FinishTournament called ===");
@@ -221,30 +228,33 @@ public class TournamentService : ITournamentService
         currentTournament.IsActive = false;
         currentTournament.IsFinished = true;
 
-        TournamentRepository.SaveTournament(currentTournament);
+        await TournamentRepository.SaveTournamentAsync(currentTournament);
 
         Console.WriteLine($"Tournament finished successfully.");
     }
 
 
 
-    public void PerformAiMatches()
+    public async Task PerformAiMatchesAsync()
     {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentTournament = await TournamentRepository.GetCurrentTournamentAsync();
+        if (currentTournament == null)
+            throw new InvalidOperationException("No tournament found");
+            
         var currentRound = currentTournament.CurrentRound;
 
         var updatedSchedule = GameService.PlayAiMatchesCurrentRound(currentTournament.RoundSchedule, currentRound);
 
         currentTournament.RoundSchedule = updatedSchedule;
-        UpdateScoreboard();
-        TournamentRepository.SaveTournament(currentTournament);
+        await UpdateScoreboardAsync();
+        await TournamentRepository.SaveTournamentAsync(currentTournament);
     }
 
 
 
-    public void UpdateScoreboard()
+    public async Task UpdateScoreboardAsync()
     {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentTournament = await TournamentRepository.GetCurrentTournamentAsync();
         if (currentTournament == null || !currentTournament.IsActive)
             throw new InvalidOperationException("No active tournament");
 
@@ -253,14 +263,14 @@ public class TournamentService : ITournamentService
         var currentScoreboard = currentTournament.Scoreboard;
 
         currentTournament.Scoreboard = GameService.UpdateScoreboard(currentTournament.RoundSchedule, currentScoreboard, currentRound);
-        TournamentRepository.SaveTournament(currentTournament);
+        await TournamentRepository.SaveTournamentAsync(currentTournament);
 
     }
 
 
-    public ScoreboardDTO GetScoreboard()
+    public async Task<ScoreboardDTO> GetScoreboardAsync()
     {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentTournament = await TournamentRepository.GetCurrentTournamentAsync();
         if (currentTournament == null)
             throw new InvalidOperationException("No tournament found");
 
@@ -282,16 +292,16 @@ public class TournamentService : ITournamentService
 
 
 
-    public int GetCurrentRoundNumber()
+    public async Task<int> GetCurrentRoundNumberAsync()
     {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentTournament = await TournamentRepository.GetCurrentTournamentAsync();
         return currentTournament?.CurrentRound ?? 0;
     }
 
 
-    public Match PlayMove(int intMove)   // LÄGG TILL best of 3   --   och ÄNDRA TILL MatchResultDTO!
+    public async Task<Match> PlayMoveAsync(int intMove)   // LÄGG TILL best of 3   --   och ÄNDRA TILL MatchResultDTO!
     {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentTournament = await TournamentRepository.GetCurrentTournamentAsync();
         if (currentTournament == null || !currentTournament.IsActive)
             throw new InvalidOperationException("No active tournament");
 
@@ -308,7 +318,7 @@ public class TournamentService : ITournamentService
         var updatedSchedule = GameService.PlayHumanMatchCurrentRound(currentTournament.RoundSchedule, currentRound, move);
 
         currentTournament.RoundSchedule = updatedSchedule;
-        TournamentRepository.SaveTournament(currentTournament);
+        await TournamentRepository.SaveTournamentAsync(currentTournament);
 
         var updatedHumanMatch = updatedSchedule[currentRound][0];
 
@@ -316,9 +326,9 @@ public class TournamentService : ITournamentService
     }
 
 
-    public StatusDTO GetHumanPlayersCurrentGameStatus()
+    public async Task<StatusDTO> GetHumanPlayersCurrentGameStatusAsync()
     {
-        var currentTournament = TournamentRepository.GetCurrentTournament();
+        var currentTournament = await TournamentRepository.GetCurrentTournamentAsync();
         if (currentTournament == null || !currentTournament.IsActive)
             throw new InvalidOperationException("No active tournament");
 
@@ -408,7 +418,7 @@ public class TournamentService : ITournamentService
 
         if (roundNbr < 1 || roundNbr > GetMaxNumberOfRounds(Participants.Count))
         {
-            throw new ArgumentException("Round number must be between 1 and " + GetMaxNumberOfRounds(ParticipantRepository.GetAllParticipants().Count));
+            throw new ArgumentException("Round number must be between 1 and " + GetMaxNumberOfRounds(Participants.Count));
         }
 
         return PairingStrategy.RotateParticipants(new List<Participant>(Participants), roundNbr);

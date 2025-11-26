@@ -6,18 +6,18 @@ namespace CiP_04_RockPaperArena.Domain.Interfaces;
 public interface ITournamentService
 {
     // Tournament management
-    void StartTournament(string name, int players);
-    Tournament? GetCurrentTournament();
-    public int GetCurrentRoundNumber();
+    Task StartTournamentAsync(string name, int players);
+    Task<Tournament?> GetCurrentTournamentAsync();
+    Task<int> GetCurrentRoundNumberAsync();
     public bool HasActiveTournament { get; }
     //List<PairDTO>? GetCurrentRoundPairs();  
-    Match PlayMove(int intMove);
-    public void PerformAiMatches();
-    public void AdvanceRound();
+    Task<Match> PlayMoveAsync(int intMove);
+    public Task PerformAiMatchesAsync();
+    public Task AdvanceRoundAsync();
 
-    public StatusDTO GetHumanPlayersCurrentGameStatus();
-    public ScoreboardDTO GetScoreboard();
-    public void FinishTournament();
+    public Task<StatusDTO> GetHumanPlayersCurrentGameStatusAsync();
+    public Task<ScoreboardDTO> GetScoreboardAsync();
+    public Task FinishTournamentAsync();
 
 
     // Round and pairing methods

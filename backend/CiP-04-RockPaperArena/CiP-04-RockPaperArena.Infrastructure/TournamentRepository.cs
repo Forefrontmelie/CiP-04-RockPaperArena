@@ -8,19 +8,21 @@ public class TournamentRepository : ITournamentRepository   // Lägg till lock e
 {
     private static Tournament? _staticTournament; // Shared across all instances
 
-    public Tournament? GetCurrentTournament()
+    public Task<Tournament?> GetCurrentTournamentAsync()
     {
-        return _staticTournament;
+        return Task.FromResult(_staticTournament);
     }
 
-    public void SaveTournament(Tournament tournament)
+    public Task SaveTournamentAsync(Tournament tournament)
     {
         _staticTournament = tournament;
+        return Task.CompletedTask;
     }
 
-    public void ClearTournament()
+    public Task ClearTournamentAsync()
     {
         _staticTournament = null;
+        return Task.CompletedTask;
     }
 
 
