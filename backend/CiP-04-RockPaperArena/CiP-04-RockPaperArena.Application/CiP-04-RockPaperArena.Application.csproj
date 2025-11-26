@@ -15,8 +15,4 @@
     <ProjectReference Include="..\CiP-04-RockPaperArena.Domain\CiP-04-RockPaperArena.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Services\" />
-  </ItemGroup>
-
 </Project>

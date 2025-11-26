@@ -1,32 +1,23 @@
-﻿using CiP_04_RockPaperArena.Domain.Dtos;
-using CiP_04_RockPaperArena.Domain.Models;
+﻿using CiP_04_RockPaperArena.Domain.Models;
 
 namespace CiP_04_RockPaperArena.Domain.Interfaces;
 
 public interface IGameService
 {
-   
-    // Return all pairs (matches) for round d (1..n-1)
-    //RoundDTO GetPairsForSpecificRound(int d);
 
-    // Return max number of rounds for n participants (n-1)
-    int GetMaxNumberOfRounds(int n);
-
-    // Return remaining unique pairs after D rounds have been played
-    int GetRemainingUniquePairs(int d);
-
-    // Return who player i meets in round d (0-based index)
-    int GetOpponentIndex(int i, int d);
-
-    // Return Participant by index
-    public Participant GetParticipant(int index);
-
-    // Return the Participant who is opponent of player i in round d
-    public Participant GetOpponentParticipant(int i, int d);
-
-    // Return full schedule for player i over rounds 1..n-1
-    PlayerScheduleDTO GetPlayerSchedule(int i);
+    public Dictionary<int, IList<Match>> PlayHumanMatchCurrentRound(Dictionary<int, IList<Match>> RoundSchedule, int currentRound, Move move);
+    public Dictionary<int, IList<Match>> PlayAiMatchesCurrentRound(Dictionary<int, IList<Match>> RoundSchedule, int currentRound);
+    public Dictionary<int, IList<Match>> PlayAllAiMatches(Dictionary<int, IList<Match>> RoundSchedule);
 
 
+    /// Plays a single Rock Paper Scissors game
+    public void PlayGame(Move player1Move, Move player2Move, Match match);
+
+    /// Generates random move for AI players   
+    Move GenerateRandomMove();
+      
+    /// Plays a complete match between two participants   
+    Match PlayMatch(Match match, int roundNumber, Move? humanMove);
+    Scoreboard UpdateScoreboard(Dictionary<int, IList<Match>> roundSchedule, Scoreboard currentScoreboard, int currentRound);
+    public int CalculatePoints(int wins, int losses, int draws);
 }
-

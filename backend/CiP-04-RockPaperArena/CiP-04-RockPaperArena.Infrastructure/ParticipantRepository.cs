@@ -4,7 +4,7 @@ using CiP_04_RockPaperArena.Domain.Interfaces;
 
 namespace CiP_04_RockPaperArena.Infrastructure;
 
-public class ParticipantRepository : IParticipantRepository
+public class ParticipantRepository : IParticipantRepository       // Lägg till lock el.del för Thread-safety
 
 {
     public IList<Participant> Participants { get; private set; }
@@ -18,26 +18,27 @@ public class ParticipantRepository : IParticipantRepository
     {
         Participants = new List<Participant>
     {
-        new HumanParticipant("Alice", 1),
-        new HumanParticipant("Bob", 2),
-        new HumanParticipant("Charlie", 3),
-        new HumanParticipant("Diana", 4),
-        new HumanParticipant("Ethan", 5),
-        new HumanParticipant("Fiona", 6)/*, 
-        new HumanParticipant("George", 7),
-        new HumanParticipant("Hannah", 8),
-        new HumanParticipant("Isaac", 9),
-        new HumanParticipant("Julia", 10),
-        new HumanParticipant("Kevin", 11),
-        new HumanParticipant("Laura", 12),
-        new HumanParticipant("Michael", 13),
-        new HumanParticipant("Nina", 14),
-        new HumanParticipant("Oscar", 15),
-        new HumanParticipant("Paula", 16),
-        new HumanParticipant("Quentin", 17),
-        new HumanParticipant("Rachel", 18),
-        new HumanParticipant("Samuel", 19),
-        new HumanParticipant("Tina", 20) */
+        new AIParticipant("Alice", 1),
+        new AIParticipant("Bob", 2),
+        new AIParticipant("Charlie", 3),
+        new AIParticipant("Diana", 4),
+        new AIParticipant("Ethan", 5),
+        new AIParticipant("Fiona", 6), 
+        new AIParticipant("George", 7),
+        new AIParticipant("Hannah", 8),
+        new AIParticipant("Isaac", 9),
+        new AIParticipant("Julia", 10),
+        new AIParticipant("Kevin", 11),
+        new AIParticipant("Laura", 12),
+        new AIParticipant("Michael", 13),
+        new AIParticipant("Nina", 14),
+        new AIParticipant("Oscar", 15),
+        new AIParticipant("Paula", 16),
+        new AIParticipant("Quentin", 17),
+        new AIParticipant("Rachel", 18),
+        new AIParticipant("Samuel", 19),
+        new AIParticipant("Tina", 20),
+        new AIParticipant("Unn", 21)
     };
 
         // NextId should be one greater than the highest id present
