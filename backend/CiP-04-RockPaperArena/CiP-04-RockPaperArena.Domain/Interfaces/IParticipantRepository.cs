@@ -7,8 +7,8 @@ public interface IParticipantRepository
 
     // IEnumerable<Participant> GetAll();
 
-    IList<Participant> GetAllParticipants();
-    void AddParticipant(string name);
-    void RemoveParticipant(int id);
-    Participant? GetParticipantById(int id);
+    Task<IList<Participant>> GetAllParticipantsAsync();
+    Task AddParticipantAsync(string name);
+    Task RemoveParticipantAsync(int id);
+    Task<Participant?> GetParticipantByIdAsync(int id);
 }
