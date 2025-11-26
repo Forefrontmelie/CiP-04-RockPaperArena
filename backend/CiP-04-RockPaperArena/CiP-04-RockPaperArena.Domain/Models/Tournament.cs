@@ -14,7 +14,7 @@ public class Tournament
     public Scoreboard Scoreboard { get; set; }
 
     public int TotalRounds => Participants.Count - 1;
-    public bool IsCompleted => CurrentRound > TotalRounds;
+    public bool IsCompleted => CurrentRound > TotalRounds;   // Ta bort? Har redan IsFinished.
 
     public Tournament(string name, int playerId, IList<Participant> participants)
     {

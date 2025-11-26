@@ -89,9 +89,28 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
     {
         try
         {
-            //tournament.PerformAiMatches();
-            tournament.AdvanceRound();
-            var response = tournament.GetScoreboard();
+        var currentTournament = tournament.GetCurrentTournament();
+        var roundBeforeAdvance = currentTournament.CurrentRound;
+        
+        tournament.AdvanceRound();
+
+        // Reload after advance
+        currentTournament = tournament.GetCurrentTournament();
+        
+        // Check if we just completed the final round
+        // (CurrentRound didn't increment because we were already at TotalRounds)
+        var justCompletedFinalRound = roundBeforeAdvance == currentTournament.TotalRounds 
+                                      && currentTournament.CurrentRound == currentTournament.TotalRounds;
+
+        var response = new
+        {
+            message = justCompletedFinalRound
+                ? "Final round complete. Call /tournament/final to finish tournament."
+                : $"Round {roundBeforeAdvance} complete. Advanced to round {currentTournament.CurrentRound}.",
+            currentRound = currentTournament.CurrentRound,
+            totalRounds = currentTournament.TotalRounds,
+            scoreboard = tournament.GetScoreboard()
+        };
 
             return Ok(response);
         }
@@ -108,14 +127,45 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
     {
         try
         {
-            var response = tournament.GetScoreboard();
-            return Ok(response);
+            // This will throw if tournament isn't ready to finish
+            tournament.FinishTournament();
+
+            var scoreboard = tournament.GetScoreboard();
+
+        // Sort by points, then by wins
+        var sortedScores = scoreboard.scores.Values
+            .OrderByDescending(s => s.Points)
+            .ThenByDescending(s => s.Wins)
+            .ToList();
+
+        // Get the highest score
+        var highestPoints = sortedScores.First().Points;
+        var highestWins = sortedScores.First().Wins;
+
+        // Find all participants with the same highest score and wins (handling ties)
+        var winners = sortedScores
+            .Where(s => s.Points == highestPoints && s.Wins == highestWins)
+            .Select(s => s.Name)
+            .ToList();
+
+        var isTie = winners.Count > 1;
+
+            return Ok(new
+            {
+                message = isTie 
+                    ? $"Tournament finished with a {winners.Count}-way tie!" 
+                    : "Tournament finished",
+                winners = winners,
+                isTie = isTie,
+                finalScoreboard = scoreboard
+            });
         }
         catch (Exception ex)
         {
             return BadRequest(new { error = ex.Message });
         }
     }
+
 
 
 

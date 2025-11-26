@@ -17,6 +17,7 @@ public interface ITournamentService
 
     public StatusDTO GetHumanPlayersCurrentGameStatus();
     public ScoreboardDTO GetScoreboard();
+    public void FinishTournament();
 
 
     // Round and pairing methods

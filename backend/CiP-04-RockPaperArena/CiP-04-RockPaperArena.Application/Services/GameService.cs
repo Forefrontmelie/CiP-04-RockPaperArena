@@ -168,7 +168,7 @@ public class GameService : IGameService
             }
             else
             {
-                match.currentRound++; 
+                //match.currentRound++; 
                 match.subRound++;
             }
             
@@ -178,7 +178,7 @@ public class GameService : IGameService
 
             if (humanMove == null)
             {
-                while(!match.IsComplete)
+                while(!ShouldComplete())
                 {
                     if (GamesPlayed() >= 3) break;
 
@@ -186,25 +186,18 @@ public class GameService : IGameService
                     var p1 = GenerateRandomMove();
                     var p2 = GenerateRandomMove();
                     PlayGame(p1, p2, match);
-
-                    //CheckWinner(gameResult, match);
-
-                    if (ShouldComplete())
-                        match.IsComplete = true;
                 }
-               // match.IsComplete = true;            
+                match.IsComplete = true;            
             }
             else
             {
                 // Human vs AI: one game per call
-                if (GamesPlayed() < 3 && match.player1Wins < 2 && match.player2Wins < 2)
+                if (!ShouldComplete())
                 { 
-                // Human vs AI match - human is always the fixed participant, hence player1
-                var p1 = humanMove.Value;
-                var p2 = GenerateRandomMove();   
-                PlayGame(p1, p2, match);
-
-            
+                    // Human vs AI match - human is always the fixed participant, hence player1
+                    var p1 = humanMove.Value;
+                    var p2 = GenerateRandomMove();   
+                    PlayGame(p1, p2, match);            
                 }
 
                 if (ShouldComplete())

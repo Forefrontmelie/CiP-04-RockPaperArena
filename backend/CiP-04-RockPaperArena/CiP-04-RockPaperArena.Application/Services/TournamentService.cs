@@ -145,8 +145,8 @@ public class TournamentService : ITournamentService
         }
         else
         {
-            throw new InvalidOperationException("Cannot advance: AI matches for round {currentRound} already complete"); 
             Console.WriteLine($"AI matches for round {currentRound} already complete, skipping");
+            throw new InvalidOperationException("Cannot advance: AI matches for round {currentRound} already complete");             
         }
 
         // Update scoreboard only once per round
@@ -166,20 +166,64 @@ public class TournamentService : ITournamentService
             Console.WriteLine($"Round {currentRound} already scored, skipping scoreboard update");
         }
 
-        // Advance to next round
+        // Advance to next round OR notify that tournament can be finished
         if (currentRound < currentTournament.TotalRounds)
         {
-            currentTournament.CurrentRound++;        /// !!!!!!!   INTE SÄKER PÅ ATT DENNA SKA VARA HÄR !!!!
-            Console.WriteLine($"Advanced to round {currentTournament.CurrentRound} --- OBS! currentRound++ bortplockad här pga stoppar uppdateringen mid-match för human annars");
+            currentTournament.CurrentRound++; 
+            Console.WriteLine($"Advanced to round {currentTournament.CurrentRound}");
         }
         else
         {
-            currentTournament.IsActive = false;
-            currentTournament.IsFinished = true;
-            Console.WriteLine("Tournament finished");
+            Console.WriteLine($"All {currentTournament.TotalRounds} rounds complete. Call /tournament/final to finish.");
         }
 
         TournamentRepository.SaveTournament(currentTournament);
+    }
+
+
+    public void FinishTournament()
+    {
+        var currentTournament = TournamentRepository.GetCurrentTournament();
+
+        // Debug logging
+        Console.WriteLine($"=== FinishTournament called ===");
+        Console.WriteLine($"Tournament exists: {currentTournament != null}");
+        Console.WriteLine($"IsActive: {currentTournament?.IsActive}");
+        Console.WriteLine($"IsFinished: {currentTournament?.IsFinished}");
+        Console.WriteLine($"CurrentRound: {currentTournament?.CurrentRound}/{currentTournament?.TotalRounds}");
+
+
+        // Essential validation
+        if (currentTournament == null)
+            throw new InvalidOperationException("No tournament found");
+
+        if (!currentTournament.IsActive)
+            throw new InvalidOperationException("Tournament is not active");
+
+        var currentRound = currentTournament.CurrentRound;
+        var totalRounds = currentTournament.TotalRounds;
+
+        // Check: All rounds completed
+        if (currentRound < totalRounds)
+            throw new InvalidOperationException(
+                $"Cannot finish tournament: Only {currentRound} of {totalRounds} rounds completed");
+
+        // Check: Final round matches are complete
+        if (!currentTournament.RoundSchedule.ContainsKey(totalRounds))
+            throw new InvalidOperationException($"Final round schedule is missing");
+
+        var finalRoundMatches = currentTournament.RoundSchedule[totalRounds];
+        if (finalRoundMatches.Any(m => !m.IsComplete))
+            throw new InvalidOperationException(
+                "Cannot finish tournament: Final round has incomplete matches");
+
+        // All checks passed - finalize
+        currentTournament.IsActive = false;
+        currentTournament.IsFinished = true;
+
+        TournamentRepository.SaveTournament(currentTournament);
+
+        Console.WriteLine($"Tournament finished successfully.");
     }
 
 
@@ -195,8 +239,6 @@ public class TournamentService : ITournamentService
         UpdateScoreboard();
         TournamentRepository.SaveTournament(currentTournament);
     }
-
-
 
 
 
@@ -219,12 +261,15 @@ public class TournamentService : ITournamentService
     public ScoreboardDTO GetScoreboard()
     {
         var currentTournament = TournamentRepository.GetCurrentTournament();
-        if (currentTournament == null || !currentTournament.IsActive)
-            throw new InvalidOperationException("No active tournament");
+        if (currentTournament == null)
+            throw new InvalidOperationException("No tournament found");
 
         var currentRound = currentTournament.CurrentRound;
 
         var currentScoreboard = currentTournament.Scoreboard;
+
+        if (currentScoreboard == null)
+            throw new InvalidOperationException("Scoreboard not available");
 
         return new ScoreboardDTO(currentScoreboard); 
 
@@ -280,6 +325,13 @@ public class TournamentService : ITournamentService
         var currentRound = currentTournament.CurrentRound;
 
         var hm = currentTournament.RoundSchedule[currentRound][0];
+
+        if (!hm.IsComplete) // To get the correct match for the StatusDTO
+        {
+            Console.WriteLine($"currentRound before: {currentRound}");
+            currentRound++;
+            Console.WriteLine($"currentRound AFTER: {currentRound}");
+        }
 
         return new StatusDTO(hm.Player, hm.Opponent, hm.currentRound, hm.subRound, hm.player1Wins, hm.player2Wins, hm.draw, hm.IsComplete);
 
