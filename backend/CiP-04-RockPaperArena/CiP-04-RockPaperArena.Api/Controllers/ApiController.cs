@@ -18,13 +18,16 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
         {
             await tournament.StartTournamentAsync(dto.name, dto.players);
 
-            var currentRound = await tournament.GetCurrentRoundNumberAsync();
-            
+            var status = await tournament.GetHumanPlayersCurrentGameStatusAsync();
+            var scoreboard = await tournament.GetScoreboardAsync();
+
             return Ok(new { 
                 message = "Tournament started successfully", 
+                scoreboard,
                 playerName = dto.name, 
+                opponent = status.Opponent,
                 totalPlayers = dto.players,
-                currentRound = currentRound,
+                currentRound = status.CurrentRound,
                 totalRounds = tournament.GetMaxNumberOfRounds(dto.players)
             });
         }
@@ -46,9 +49,14 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
                 return Ok(new { message = "No active tournament" });
             }
                 
-            var response = await tournament.GetHumanPlayersCurrentGameStatusAsync();
-            
-            return Ok(response);
+            //var response = await tournament.GetHumanPlayersCurrentGameStatusAsync();
+            var scoreboard = await tournament.GetScoreboardAsync();
+
+            return Ok(new
+            {
+                //response,
+                scoreboard
+            });
         }
         catch (Exception ex)
         {
@@ -100,8 +108,11 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
                 message = justCompletedFinalRound
                     ? "Final round complete. Call /tournament/final to finish tournament."
                     : $"Round {roundBeforeAdvance} complete. Advanced to round {currentTournament.CurrentRound}.",
-                currentRound = currentTournament.CurrentRound,
-                totalRounds = currentTournament.TotalRounds,
+                //currentRound = currentTournament.CurrentRound,
+                //totalRounds = currentTournament.TotalRounds,
+                isComplete = justCompletedFinalRound
+                   ? "true"
+                   : "false",
                 scoreboard = await tournament.GetScoreboardAsync()
             };
 
@@ -153,6 +164,11 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
             return BadRequest(new { error = ex.Message });
         }
     }
+
+
+
+
+
 
     // GET /participants
     [HttpGet("participants")]
