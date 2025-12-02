@@ -156,10 +156,17 @@ const handleClickAdvanceGame = async () => {
       console.log('Tournament is complete!');
       const finalResult = await getFinalResult();
       console.log('Final result:', finalResult);    
-      alert(`Tournament Complete! Winner: ${finalResult.winner}`);
+
+      const isTie = finalResult.isTie === true || finalResult.isTie === 'true';
+      if(isTie) {
+        alert(`${finalResult.message}  ${finalResult.winners}`);
+      } else {
+
+      alert(`Tournament Complete! Winner: ${finalResult.winners}`);
       setTournamentActive(false);
       setTournamentInfo(null);
       setScoreboard([]);
+      }
 
     } else {
       // Update tournament info and scoreboard if not complete
@@ -277,13 +284,10 @@ const handleClickAdvanceGame = async () => {
           <>
             {tournamentInfo && (
               <Typography variant="h6" gutterBottom align="center">
-                Round {tournamentInfo.currentRound} of {tournamentInfo.totalRounds}
-                <br/>
-                {tournamentInfo.playerName} vs {tournamentInfo.opponent}. 
-                <br />Sub round {tournamentInfo.subRound} of {tournamentInfo.totalRounds} 
-                <br />Score: {tournamentInfo.player1Wins} - {tournamentInfo.player2Wins}
-                <br />Draws: {tournamentInfo.draws}
-                <br /> Choose your weapon!
+                Round {tournamentInfo.currentRound}: {tournamentInfo.playerName} vs {tournamentInfo.opponent}. 
+                <br />Sub round {tournamentInfo.subRound || 1} of 3
+                <br />Score: {tournamentInfo.player1Wins || 0} - {tournamentInfo.player2Wins || 0}
+                <br />Draws: {tournamentInfo.draws || 0}
               </Typography>
             )}
             
@@ -375,7 +379,7 @@ const handleClickAdvanceGame = async () => {
             )}
 
             <Button variant="outlined" size='large' onClick={handleClickAdvanceGame}>
-              Advance Game
+              Next Round
             </Button>
           </>
         )}
