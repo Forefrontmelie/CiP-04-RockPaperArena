@@ -25,8 +25,6 @@ public class GameService : IGameService
         if (!humanMatch.IsComplete)
         {
             var updated = PlayMatch(humanMatch, currentRound, move);
-            // If PlayMatch mutates and returns same instance, no need to reassign.
-            // If it returns a different Match object, then:
             matchesThisRound[0] = updated;
         }
 
@@ -49,7 +47,7 @@ public class GameService : IGameService
             updatedMatches.Add(matchesThisRound[0]);
          }
 
-         // Process AI matches (indexes 1 to n-1)
+         // Process AI matches (1 to n-1)
          for (int i = 1; i < matchesThisRound.Count; i++)
          {
             var match = matchesThisRound[i];
@@ -80,7 +78,7 @@ public class GameService : IGameService
                 updatedMatches.Add(matches[0]);
             }
 
-            // Process AI matches (indexes 1 to n-1)
+            // Process AI matches (1 to n-1)
             for (int i = 1; i < matches.Count; i++)
             {
                 var match = matches[i];
@@ -319,9 +317,9 @@ public class GameService : IGameService
     public int CalculatePoints(int wins, int losses, int draws)
     {
         // Match outcome (best-of-3):
-        // - Win match (2 wins) = 3 points
-        // - Draw match (neither reached 2 wins) = 1 point
-        // - Lose match (opponent got 2 wins) = 0 points
+        // - Win = 3 points
+        // - Draw = 1 point
+        // - Loss = 0 points
 
         if (wins == 2)
             return 3;  // Won the match
