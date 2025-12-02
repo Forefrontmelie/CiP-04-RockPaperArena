@@ -1,6 +1,5 @@
 
 
-
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5173/Api';
 
 // Constants for game moves
@@ -23,15 +22,6 @@ export const HTTP_STATUS = {
   SERVICE_UNAVAILABLE: 503,
 };
 
-
-// Helper function to handle API responses
-const handleResponse_short = async (response) => {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'An error occurred' }));
-    throw new Error(error.error || `HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-};
 
 
 // Helper function to handle API responses with detailed status handling
@@ -143,31 +133,12 @@ export const addPlayer = async (name) => {
 
 
 
-export const getAllParticipants = async () => {
-  const response = await fetch(`${API_BASE_URL}/participants`, {
-    method: 'GET',
-  });
-  return handleResponse(response);
-};
-
-
-export const removePlayer = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/player/${id}`, {
-    method: 'DELETE',
-  });
-  return handleResponse(response);
-};
-
-
-
 export default {
   startTournament,
   getTournamentStatus,
   playMove,
   advanceTournament,
   getFinalResult,
-  getAllParticipants,
   addPlayer,
-  removePlayer,
   MOVES,
 };

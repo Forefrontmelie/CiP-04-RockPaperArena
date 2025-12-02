@@ -1,6 +1,6 @@
 import './App.css';
-import { useEffect, useState, Fragment} from 'react';
-import { startTournament, getTournamentStatus, playMove, getFinalResult, MOVES, advanceTournament } from './http';
+import { useState, Fragment} from 'react';
+import { startTournament, playMove, getFinalResult, MOVES, advanceTournament } from './http';
 import { Button, Container, Typography, Dialog, DialogActions, 
         DialogContent, DialogContentText, DialogTitle, TextField, Box, 
         Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Stack } from '@mui/material';
@@ -56,13 +56,10 @@ function App() {
     try {
       const response = await startTournament(playerName, players);
       console.log('Tournament started:', response);
-      
-      var scoreboard = response.scoreboard || [];
-
+            
       setTournamentActive(true);
       setTournamentInfo(response);
-      
-      // Extract scoreboard from the nested structure
+
       if (response.scoreboard && response.scoreboard.scores) {
         // Transform the scores object into an array for the table
         const scoresArray = Object.entries(response.scoreboard.scores).map(([playerId, playerData]) => ({
@@ -101,14 +98,13 @@ function App() {
 const handlePlayMove = async (moveValue) => {
   try {
     const response = await playMove(moveValue);
-    console.log('Move played:', response);
+    console.log('Move played:', response);    
     
-    // Update tournament info with the response data
     setTournamentInfo({
       playerName: response.player,
       opponent: response.opponent,
       currentRound: response.currentRound,
-      totalRounds: tournamentInfo.totalRounds, // Keep from initial state
+      totalRounds: tournamentInfo.totalRounds, 
       player1Wins: response.player1Wins,
       player2Wins: response.player2Wins,
       subRound: response.subRound,
@@ -116,7 +112,7 @@ const handlePlayMove = async (moveValue) => {
       isComplete: response.isComplete
     });
 
-    // Update scoreboard from response if it exists
+    
     if (response.scoreboard && response.scoreboard.scores) {
       const scoresArray = Object.entries(response.scoreboard.scores).map(([playerId, playerData]) => ({
         playerId: parseInt(playerId),
@@ -127,12 +123,12 @@ const handlePlayMove = async (moveValue) => {
         points: playerData.points || 0
       }));
       
-      // Sort by points descending
+      
       scoresArray.sort((a, b) => b.points - a.points);
       setScoreboard(scoresArray);
     }
     
-    // Update tournament info if provided
+    
     if (response.tournamentInfo) {
       setTournamentInfo(response.tournamentInfo);
     }
@@ -148,7 +144,7 @@ const handleClickAdvanceGame = async () => {
     console.log('Tournament advanced:', response);
         
     console.log('isComplete = ', response.isComplete);
-    //console.log('isComplete type:', typeof response.isComplete); // Add this to check the type
+    //console.log('isComplete type:', typeof response.isComplete);
 
     const isComplete = response.isComplete === true || response.isComplete === 'true';
 
@@ -169,7 +165,6 @@ const handleClickAdvanceGame = async () => {
       }
 
     } else {
-      // Update tournament info and scoreboard if not complete
       setTournamentInfo(response);
       if (response.scoreboard && response.scoreboard.scores) {
         const scoresArray = Object.entries(response.scoreboard.scores).map(([playerId, playerData]) => ({
