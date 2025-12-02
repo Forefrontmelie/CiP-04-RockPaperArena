@@ -58,25 +58,11 @@ function App() {
       console.log('Tournament started:', response);
             
       setTournamentActive(true);
+      console.log('response to set info:', response);
       setTournamentInfo(response);
-
-      if (response.scoreboard && response.scoreboard.scores) {
-        // Transform the scores object into an array for the table
-        const scoresArray = Object.entries(response.scoreboard.scores).map(([playerId, playerData]) => ({
-          playerId: parseInt(playerId),
-          playerName: playerData.name || `Player ${playerId}`,
-          wins: playerData.wins || 0,
-          losses: playerData.losses || 0,
-          draws: playerData.draws || 0,
-          points: playerData.points || 0
-        }));
-      
-        // Sort by points descending
-        scoresArray.sort((a, b) => b.points - a.points);
-        
-        setScoreboard(scoresArray);
-    }
+      handleSetScoreboard(response);
       handleClose();
+
     } catch (error) {
       console.error('Error starting tournament:', error);
       alert(`Error starting tournament: ${error.message}`);
@@ -85,14 +71,44 @@ function App() {
 
 
 
-
-
   const handleBack = () => {
     setDialogStep(1);
   };
 
 
+  const handleSetTournamentInfo = (info) => {
+    setTournamentInfo({
+      playerName: info.player,
+      opponent: info.opponent,
+      currentRound: info.currentRound,
+      totalRounds: tournamentInfo.totalRounds, 
+      player1Wins: info.player1Wins,
+      player2Wins: info.player2Wins,
+      subRound: info.subRound,
+      draws: info.draws,
+      isComplete: info.isComplete
+    });
+  };
 
+
+  
+  const handleSetScoreboard = (info) => {
+      if (info.scoreboard && info.scoreboard.scores) {
+        const scoresArray = Object.entries(info.scoreboard.scores).map(([playerId, playerData]) => ({
+          playerId: parseInt(playerId),
+          playerName: playerData.name || `Player ${playerId}`,
+          totalRounds: info.totalRounds || tournamentInfo?.totalRounds, // Keep from initial state
+          wins: playerData.wins || 0,
+          losses: playerData.losses || 0,
+          draws: playerData.draws || 0,
+          points: playerData.points || 0
+        }));
+        
+        // Sort by points descending
+        scoresArray.sort((a, b) => b.points - a.points);
+        setScoreboard(scoresArray);
+    }
+  };
 
 
 const handlePlayMove = async (moveValue) => {
@@ -100,38 +116,14 @@ const handlePlayMove = async (moveValue) => {
     const response = await playMove(moveValue);
     console.log('Move played:', response);    
     
-    setTournamentInfo({
-      playerName: response.player,
-      opponent: response.opponent,
-      currentRound: response.currentRound,
-      totalRounds: tournamentInfo.totalRounds, 
-      player1Wins: response.player1Wins,
-      player2Wins: response.player2Wins,
-      subRound: response.subRound,
-      draws: response.draws,
-      isComplete: response.isComplete
-    });
-
-    
-    if (response.scoreboard && response.scoreboard.scores) {
-      const scoresArray = Object.entries(response.scoreboard.scores).map(([playerId, playerData]) => ({
-        playerId: parseInt(playerId),
-        playerName: playerData.name || `Player ${playerId}`,
-        wins: playerData.wins || 0,
-        losses: playerData.losses || 0,
-        draws: playerData.draws || 0,
-        points: playerData.points || 0
-      }));
-      
-      
-      scoresArray.sort((a, b) => b.points - a.points);
-      setScoreboard(scoresArray);
-    }
+    handleSetTournamentInfo(response);
+    handleSetScoreboard(response);
     
     
     if (response.tournamentInfo) {
-      setTournamentInfo(response.tournamentInfo);
+      handleSetTournamentInfo(response.tournamentInfo);
     }
+
   } catch (error) {
     console.error('Error playing move:', error);
     alert(`Error playing move: ${error.message}`);
@@ -144,7 +136,6 @@ const handleClickAdvanceGame = async () => {
     console.log('Tournament advanced:', response);
         
     console.log('isComplete = ', response.isComplete);
-    //console.log('isComplete type:', typeof response.isComplete);
 
     const isComplete = response.isComplete === true || response.isComplete === 'true';
 
@@ -155,7 +146,7 @@ const handleClickAdvanceGame = async () => {
 
       const isTie = finalResult.isTie === true || finalResult.isTie === 'true';
       if(isTie) {
-        alert(`${finalResult.message}  ${finalResult.winners}`);
+        alert(`${finalResult.message}  Winners: ${finalResult.winners}`);
       } else {
 
       alert(`Tournament Complete! Winner: ${finalResult.winners}`);
@@ -165,23 +156,9 @@ const handleClickAdvanceGame = async () => {
       }
 
     } else {
-      setTournamentInfo(response);
-      if (response.scoreboard && response.scoreboard.scores) {
-        const scoresArray = Object.entries(response.scoreboard.scores).map(([playerId, playerData]) => ({
-          playerId: parseInt(playerId),
-          playerName: playerData.name || `Player ${playerId}`,
-          totalRounds: tournamentInfo.totalRounds, // Keep from initial state
-          wins: playerData.wins || 0,
-          losses: playerData.losses || 0,
-          draws: playerData.draws || 0,
-          points: playerData.points || 0
-        }));
-        
-        // Sort by points descending
-        scoresArray.sort((a, b) => b.points - a.points);
-        setScoreboard(scoresArray);
-      }
-    }
+      handleSetTournamentInfo(response);
+      handleSetScoreboard(response);
+    }    
   } catch (error) {
     console.error('Error advancing tournament:', error);
     alert(`Error advancing tournament: ${error.message}`);

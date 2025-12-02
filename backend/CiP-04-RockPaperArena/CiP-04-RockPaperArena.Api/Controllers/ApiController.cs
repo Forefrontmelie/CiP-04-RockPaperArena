@@ -108,8 +108,6 @@ public class ApiController(ITournamentService tournament, IParticipantRepository
                 message = justCompletedFinalRound
                     ? "Final round complete. Call /tournament/final to finish tournament."
                     : $"Round {roundBeforeAdvance} complete. Advanced to round {currentTournament.CurrentRound}.",
-                //currentRound = currentTournament.CurrentRound,
-                //totalRounds = currentTournament.TotalRounds,
                 isComplete = justCompletedFinalRound
                    ? "true"
                    : "false",
